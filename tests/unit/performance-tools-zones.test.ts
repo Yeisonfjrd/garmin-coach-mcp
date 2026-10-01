@@ -30,19 +30,18 @@ describe('PerformanceTools - zones, threshold and readiness', () => {
     client = {
       getHrZones: vi.fn(),
       getActivityHrZones: vi.fn(),
-      getLactateThreshold: vi.fn(),
       getTrainingReadiness: vi.fn(),
     } as unknown as GarminClient;
     tools = new PerformanceTools(client);
   });
 
   describe('getHrZones', () => {
-    it('normalises the lactate threshold basis and collects zone floors', async () => {
+    it('reads the live field names: trainingMethod and lactateThresholdHeartRateUsed', async () => {
       vi.mocked(client.getHrZones).mockResolvedValue([
         {
           sport: 'RUNNING',
-          zoneCalculationMethod: 'LACTATE_THRESHOLD_HEART_RATE',
-          lactateThresholdHeartRate: 175,
+          trainingMethod: 'LACTATE_THRESHOLD_HEART_RATE',
+          lactateThresholdHeartRateUsed: 175,
           zone1Floor: 110,
           zone2Floor: 149,
           zone3Floor: 157,
@@ -64,8 +63,8 @@ describe('PerformanceTools - zones, threshold and readiness', () => {
 
     it('recognises the heart rate reserve and max HR bases', async () => {
       vi.mocked(client.getHrZones).mockResolvedValue([
-        { sport: 'RUNNING', zoneCalculationMethod: 'HR_RESERVE' },
-        { sport: 'CYCLING', heartRateZoneCalculationType: 'PERCENT_MAX_HR' },
+        { sport: 'RUNNING', trainingMethod: 'PERCENT_HRR' },
+        { sport: 'CYCLING', trainingMethod: 'HR_MAX' },
       ]);
 
       const zones = parse(await tools.getHrZones()).zones as Record<string, unknown>[];
@@ -75,7 +74,7 @@ describe('PerformanceTools - zones, threshold and readiness', () => {
 
     it('passes an unrecognised basis through rather than guessing', async () => {
       vi.mocked(client.getHrZones).mockResolvedValue([
-        { sport: 'RUNNING', zoneCalculationMethod: 'SOMETHING_NEW' },
+        { sport: 'RUNNING', trainingMethod: 'SOMETHING_NEW' },
       ]);
 
       const zones = parse(await tools.getHrZones()).zones as Record<string, unknown>[];
@@ -89,6 +88,39 @@ describe('PerformanceTools - zones, threshold and readiness', () => {
       expect(zones[0].basis).toBeNull();
       expect(zones[0].zoneFloors).toBeNull();
       expect(zones[0].maxHeartRateUsed).toBeNull();
+    });
+
+    it('summarises a real HR_MAX payload, one entry per sport', async () => {
+      // Shape taken verbatim from a live response.
+      vi.mocked(client.getHrZones).mockResolvedValue([
+        {
+          trainingMethod: 'HR_MAX',
+          restingHeartRateUsed: 50,
+          lactateThresholdHeartRateUsed: 175,
+          zone1Floor: 97,
+          zone2Floor: 116,
+          zone3Floor: 135,
+          zone4Floor: 154,
+          zone5Floor: 174,
+          maxHeartRateUsed: 193,
+          sport: 'DEFAULT',
+        },
+        {
+          trainingMethod: 'HR_MAX',
+          lactateThresholdHeartRateUsed: 158,
+          maxHeartRateUsed: 194,
+          sport: 'CYCLING',
+        },
+      ]);
+
+      const zones = parse(await tools.getHrZones()).zones as Record<string, unknown>[];
+      expect(zones).toHaveLength(2);
+      expect(zones[0].basis).toBe('max HR');
+      expect(zones[0].maxHeartRateUsed).toBe(193);
+      expect(zones[0].lactateThresholdHeartRate).toBe(175);
+      expect(zones[0].zoneFloors).toEqual([97, 116, 135, 154, 174]);
+      // The threshold differs per sport, so it must not be read from the first entry only.
+      expect(zones[1].lactateThresholdHeartRate).toBe(158);
     });
 
     it('keeps the untouched payload alongside the summary', async () => {
@@ -143,29 +175,6 @@ describe('PerformanceTools - zones, threshold and readiness', () => {
       expect(result.isError).toBe(true);
       expect(parse(result).error).toContain('activityId');
       expect(client.getActivityHrZones).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('getLactateThreshold', () => {
-    it('defaults to a 180 day window ending today', async () => {
-      vi.mocked(client.getLactateThreshold).mockResolvedValue([]);
-
-      await tools.getLactateThreshold({});
-
-      const [start, end] = vi.mocked(client.getLactateThreshold).mock.calls[0];
-      const spanDays = Math.round((end.getTime() - start.getTime()) / 86_400_000);
-      expect(spanDays).toBe(180);
-    });
-
-    it('reports the count and the range it queried', async () => {
-      vi.mocked(client.getLactateThreshold).mockResolvedValue([{ calendarDate: '2026-09-16' }]);
-
-      const out = parse(
-        await tools.getLactateThreshold({ startDate: '2026-06-01', endDate: '2026-10-01' })
-      );
-      expect(out.count).toBe(1);
-      expect(out.from).toBe('2026-06-01');
-      expect(out.to).toBe('2026-10-01');
     });
   });
 

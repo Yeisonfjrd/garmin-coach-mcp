@@ -13,7 +13,6 @@
  * - getTrainingStatus: aggregated training status
  * - getHrZones: the heart rate zones configured on the account, and their basis
  * - getActivityHrZones: time spent in each zone during one activity
- * - getLactateThreshold: threshold HR and pace history
  * - getTrainingReadiness: the device verdict on training hard today
  *
  * @category Tracking
@@ -51,7 +50,7 @@ function zoneBasisLabel(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
   const key = raw.toUpperCase();
   if (key.includes('LACTATE') || key.includes('THRESHOLD')) return 'lactate threshold HR';
-  if (key.includes('RESERVE') || key === 'HRR') return 'heart rate reserve';
+  if (key.includes('RESERVE') || key.includes('HRR')) return 'heart rate reserve';
   if (key.includes('MAX')) return 'max HR';
   return raw;
 }
@@ -237,9 +236,11 @@ export class PerformanceTools {
    * heart rate reserve and lactate threshold, so a plan can be read as
    * "too hard" purely because the basis is wrong.
    *
-   * Field names on this endpoint vary between accounts and firmware, so
-   * recognised fields are summarised and the untouched payload is returned
-   * alongside rather than discarded.
+   * Field names here were confirmed against a live payload: the basis arrives as
+   * `trainingMethod` (e.g. HR_MAX) and the threshold as
+   * `lactateThresholdHeartRateUsed`. Garmin returns one entry per sport, and the
+   * threshold differs between them. The untouched payload is returned alongside
+   * the summary, since the field set is not contractual.
    */
   async getHrZones(): Promise<ToolResult> {
     try {
@@ -253,11 +254,13 @@ export class PerformanceTools {
         return {
           sport: strOrNull(z.sport),
           basis: zoneBasisLabel(
-            z.zoneCalculationMethod ?? z.heartRateZoneCalculationType ?? z.calculationMethod
+            z.trainingMethod ?? z.zoneCalculationMethod ?? z.heartRateZoneCalculationType
           ),
           maxHeartRateUsed: numOrNull(z.maxHeartRateUsed),
           restingHeartRateUsed: numOrNull(z.restingHeartRateUsed),
-          lactateThresholdHeartRate: numOrNull(z.lactateThresholdHeartRate),
+          lactateThresholdHeartRate: numOrNull(
+            z.lactateThresholdHeartRateUsed ?? z.lactateThresholdHeartRate
+          ),
           zoneFloors: floors.length > 0 ? floors : null,
         };
       });
@@ -303,34 +306,6 @@ export class PerformanceTools {
       });
     } catch (error) {
       return fail('get activity heart rate zones', error);
-    }
-  }
-
-  /**
-   * Lactate threshold history. This is the anchor HR zones should rest on: the
-   * watch re-detects it as fitness changes, whereas max HR is fixed, so zones
-   * tied to threshold stay correct without being re-entered. Defaults to the
-   * last 180 days, since detections are sparse.
-   */
-  async getLactateThreshold(params: { startDate?: string; endDate?: string }): Promise<ToolResult> {
-    try {
-      const end = params.endDate ? new Date(params.endDate) : new Date();
-      const start = params.startDate
-        ? new Date(params.startDate)
-        : new Date(end.getTime() - 180 * 24 * 60 * 60 * 1000);
-
-      const raw = await this.garminClient.getLactateThreshold(start, end);
-      const entries = Array.isArray(raw) ? raw : [];
-
-      return ok({
-        success: true,
-        from: start.toISOString().split('T')[0],
-        to: end.toISOString().split('T')[0],
-        count: entries.length,
-        raw,
-      });
-    } catch (error) {
-      return fail('get lactate threshold', error);
     }
   }
 
