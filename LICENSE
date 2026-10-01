@@ -1,6 +1,11 @@
 MIT License
 
+Copyright (c) 2026 Yeison Fajardo
 Copyright (c) 2025 Garmin Connect MCP Contributors
+
+This project began as a copy of garmin-connect-mcp by Evgenii Podivilov
+(https://github.com/epodivilov/garmin-connect-mcp), used under the MIT License.
+The original copyright notice above is retained as that license requires.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

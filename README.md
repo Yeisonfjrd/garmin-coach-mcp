@@ -1,6 +1,12 @@
-# Garmin Connect MCP Server
+# Garmin Coach MCP
 
-A Model Context Protocol (MCP) server that provides comprehensive access to Garmin Connect data including sleep analytics, health metrics, activities, and training volume analysis. Perfect for building AI-powered fitness insights, training analysis, and health tracking applications.
+A Model Context Protocol (MCP) server that lets an AI assistant **read your Garmin Connect
+data and write structured training back into it**. It covers sleep, health metrics, activities
+and training volume on the read side, and multi-sport structured workouts, calendar scheduling
+and performance metrics on the write side.
+
+Built to close a specific gap: most Garmin integrations only read. This one plans a training
+block and puts it on the watch.
 
 ## Table of Contents
 
@@ -12,6 +18,7 @@ A Model Context Protocol (MCP) server that provides comprehensive access to Garm
 - [Advanced Features](#advanced-features)
 - [Development](#development)
 - [Security](#security)
+- [Attribution](#attribution)
 
 ## Overview
 
@@ -650,12 +657,23 @@ Contributions are welcome! Please ensure:
 - Code follows existing style guidelines
 - New features include tests
 
+## Attribution
+
+This project started from [garmin-connect-mcp](https://github.com/epodivilov/garmin-connect-mcp)
+by **Evgenii Podivilov**, at version 0.4.0, used under the MIT License. That codebase provided the
+MCP server scaffolding, the Garmin Connect client wrapper and the original read tools.
+
+It is maintained here as an independent project rather than a fork, so it can diverge without
+waiting on upstream. Work added since the import:
+
+- Multi-sport structured workouts (cycling, swimming and other, not just running)
+- VO2max readings at full precision, rather than the integer the Garmin UI rounds to
+- Per-lap activity splits, so individual intervals can be analysed instead of type totals
+- Race predictions, overnight HRV, and aggregated training status
+
+See [LICENSE](LICENSE) for the full notice, which retains the original copyright as the MIT
+License requires.
+
 ## License
 
-MIT
-
-## Version
-
-Current version: 0.1.0
-
-For updates and changelog, see the [releases page](https://github.com/your-repo/releases).
+MIT - see [LICENSE](LICENSE).
