@@ -11,6 +11,10 @@
  * - getRacePredictions: predicted 5K / 10K / half / marathon times
  * - getHrv: overnight HRV summary and readings
  * - getTrainingStatus: aggregated training status
+ * - getHrZones: the heart rate zones configured on the account, and their basis
+ * - getActivityHrZones: time spent in each zone during one activity
+ * - getLactateThreshold: threshold HR and pace history
+ * - getTrainingReadiness: the device verdict on training hard today
  *
  * @category Tracking
  */
@@ -38,6 +42,28 @@ function formatPace(secondsPerKm: number): string {
   return `${m}:${String(s).padStart(2, '0')}/km`;
 }
 
+/**
+ * Garmin names the zone basis differently depending on the endpoint, so map the
+ * variants onto one readable label. Unrecognised values pass through unchanged
+ * rather than being guessed at.
+ */
+function zoneBasisLabel(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const key = raw.toUpperCase();
+  if (key.includes('LACTATE') || key.includes('THRESHOLD')) return 'lactate threshold HR';
+  if (key.includes('RESERVE') || key === 'HRR') return 'heart rate reserve';
+  if (key.includes('MAX')) return 'max HR';
+  return raw;
+}
+
+function numOrNull(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+function strOrNull(v: unknown): string | null {
+  return typeof v === 'string' ? v : null;
+}
+
 function ok(payload: unknown): ToolResult {
   return { content: [{ type: 'text' as const, text: JSON.stringify(payload, null, 2) }] };
 }
@@ -61,6 +87,12 @@ interface LapDTO {
   averageHR?: number;
   maxHR?: number;
   averageRunCadence?: number;
+}
+
+interface ZoneTimeEntry {
+  zoneNumber?: number;
+  secsInZone?: number;
+  zoneLowBoundary?: number;
 }
 
 export class PerformanceTools {
@@ -196,6 +228,137 @@ export class PerformanceTools {
       return ok({ success: true, trainingStatus: raw });
     } catch (error) {
       return fail('get training status', error);
+    }
+  }
+
+  /**
+   * The heart rate zones configured on the account. What matters here is the
+   * basis, not the percentages: a 60-70% band means different bpm under max HR,
+   * heart rate reserve and lactate threshold, so a plan can be read as
+   * "too hard" purely because the basis is wrong.
+   *
+   * Field names on this endpoint vary between accounts and firmware, so
+   * recognised fields are summarised and the untouched payload is returned
+   * alongside rather than discarded.
+   */
+  async getHrZones(): Promise<ToolResult> {
+    try {
+      const raw = await this.garminClient.getHrZones();
+      const entries = (Array.isArray(raw) ? raw : [raw]) as Record<string, unknown>[];
+
+      const zones = entries.filter(Boolean).map((z) => {
+        const floors = [1, 2, 3, 4, 5]
+          .map((n) => numOrNull(z[`zone${n}Floor`]))
+          .filter((v): v is number => v !== null);
+        return {
+          sport: strOrNull(z.sport),
+          basis: zoneBasisLabel(
+            z.zoneCalculationMethod ?? z.heartRateZoneCalculationType ?? z.calculationMethod
+          ),
+          maxHeartRateUsed: numOrNull(z.maxHeartRateUsed),
+          restingHeartRateUsed: numOrNull(z.restingHeartRateUsed),
+          lactateThresholdHeartRate: numOrNull(z.lactateThresholdHeartRate),
+          zoneFloors: floors.length > 0 ? floors : null,
+        };
+      });
+
+      return ok({ success: true, zoneConfigCount: zones.length, zones, raw });
+    } catch (error) {
+      return fail('get heart rate zones', error);
+    }
+  }
+
+  /**
+   * Time spent in each heart rate zone during one activity, with each zone's
+   * share of the session. Average HR hides distribution: an even aerobic run
+   * and one that swung between too hard and too soft can average the same.
+   */
+  async getActivityHrZones(params: { activityId: number }): Promise<ToolResult> {
+    try {
+      if (typeof params.activityId !== 'number') {
+        throw new Error('activityId is required and must be a number');
+      }
+
+      const raw = (await this.garminClient.getActivityHrZones(params.activityId)) as ZoneTimeEntry[];
+      const entries = Array.isArray(raw) ? raw : [];
+      const total = entries.reduce((sum, e) => sum + (Number(e?.secsInZone) || 0), 0);
+
+      const zones = entries.map((e) => {
+        const secs = Number(e?.secsInZone) || 0;
+        return {
+          zone: numOrNull(e?.zoneNumber),
+          fromBpm: numOrNull(e?.zoneLowBoundary),
+          seconds: Math.round(secs),
+          time: formatDuration(secs),
+          percent: total > 0 ? Number(((secs / total) * 100).toFixed(1)) : null,
+        };
+      });
+
+      return ok({
+        success: true,
+        activityId: params.activityId,
+        totalSeconds: Math.round(total),
+        totalTime: formatDuration(total),
+        zones,
+      });
+    } catch (error) {
+      return fail('get activity heart rate zones', error);
+    }
+  }
+
+  /**
+   * Lactate threshold history. This is the anchor HR zones should rest on: the
+   * watch re-detects it as fitness changes, whereas max HR is fixed, so zones
+   * tied to threshold stay correct without being re-entered. Defaults to the
+   * last 180 days, since detections are sparse.
+   */
+  async getLactateThreshold(params: { startDate?: string; endDate?: string }): Promise<ToolResult> {
+    try {
+      const end = params.endDate ? new Date(params.endDate) : new Date();
+      const start = params.startDate
+        ? new Date(params.startDate)
+        : new Date(end.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+      const raw = await this.garminClient.getLactateThreshold(start, end);
+      const entries = Array.isArray(raw) ? raw : [];
+
+      return ok({
+        success: true,
+        from: start.toISOString().split('T')[0],
+        to: end.toISOString().split('T')[0],
+        count: entries.length,
+        raw,
+      });
+    } catch (error) {
+      return fail('get lactate threshold', error);
+    }
+  }
+
+  /**
+   * Training readiness for a date: the score the device derives from sleep,
+   * recovery time, HRV and recent load. Useful as a go / hold check before a
+   * hard session.
+   */
+  async getTrainingReadiness(params: { date?: string }): Promise<ToolResult> {
+    try {
+      const date = params.date ? new Date(params.date) : new Date();
+      const raw = await this.garminClient.getTrainingReadiness(date);
+      const first = (Array.isArray(raw) ? raw[0] : raw) as Record<string, unknown> | undefined;
+      const r = first ?? {};
+
+      return ok({
+        success: true,
+        date: strOrNull(r.calendarDate),
+        score: numOrNull(r.score),
+        level: strOrNull(r.level),
+        feedback: strOrNull(r.feedbackShort),
+        sleepScore: numOrNull(r.sleepScore),
+        hrvFactorPercent: numOrNull(r.hrvFactorPercent),
+        recoveryTime: numOrNull(r.recoveryTime),
+        raw,
+      });
+    } catch (error) {
+      return fail('get training readiness', error);
     }
   }
 }
