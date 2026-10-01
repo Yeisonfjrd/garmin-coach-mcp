@@ -814,4 +814,42 @@ export class GarminClient {
     const d = date.toISOString().split('T')[0];
     return await this.rawGet(`/metrics-service/metrics/trainingstatus/aggregated/${d}`);
   }
+
+  /**
+   * The heart rate zones configured on the account, per sport, together with
+   * the basis Garmin derives them from: max HR, heart rate reserve, or lactate
+   * threshold. The basis matters more than the percentages — an identical
+   * 60-70% band lands on completely different bpm depending on which is used.
+   */
+  async getHrZones(): Promise<unknown> {
+    return await this.rawGet('/biometric-service/heartRateZones');
+  }
+
+  /**
+   * Time spent in each heart rate zone during one activity. Average HR cannot
+   * tell an even easy run from one that alternated too hard and too soft; this
+   * can.
+   */
+  async getActivityHrZones(activityId: number): Promise<unknown> {
+    return await this.rawGet(`/activity-service/activity/${activityId}/hrTimeInZones`);
+  }
+
+  /**
+   * Lactate threshold history as the watch auto-detects it: threshold heart
+   * rate and threshold pace. Unlike max HR, this moves with fitness, so zones
+   * anchored to it stay correct as training progresses.
+   */
+  async getLactateThreshold(startDate: Date, endDate: Date): Promise<unknown> {
+    const s = startDate.toISOString().split('T')[0];
+    const e = endDate.toISOString().split('T')[0];
+    return await this.rawGet(
+      `/biometric-service/stats/lactateThreshold/range/${s}/${e}?aggregation=daily`
+    );
+  }
+
+  /** Training readiness: the device's own verdict on whether to train hard today. */
+  async getTrainingReadiness(date: Date): Promise<unknown> {
+    const d = date.toISOString().split('T')[0];
+    return await this.rawGet(`/metrics-service/metrics/trainingreadiness/${d}`);
+  }
 }
