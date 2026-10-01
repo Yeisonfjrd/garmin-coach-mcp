@@ -16,6 +16,7 @@ import { ActivityTools } from './tools/basic/activity-tools.js';
 import { ActivityVolumeTools } from './tools/aggregation/activity-volume-tools.js';
 import { TrainingStressTools } from './tools/tracking/training-stress-tools.js';
 import { WorkoutTools } from './tools/tracking/workout-tools.js';
+import { PerformanceTools } from './tools/tracking/performance-tools.js';
 
 class GarminConnectMCPServer {
   private server: Server;
@@ -27,6 +28,7 @@ class GarminConnectMCPServer {
   private activityVolumeTools: ActivityVolumeTools;
   private trainingStressTools: TrainingStressTools;
   private workoutTools: WorkoutTools;
+  private performanceTools: PerformanceTools;
 
   constructor() {
     const version = getPackageVersion();
@@ -62,6 +64,7 @@ class GarminConnectMCPServer {
     this.activityVolumeTools = new ActivityVolumeTools(this.garminClient);
     this.trainingStressTools = new TrainingStressTools(this.garminClient);
     this.workoutTools = new WorkoutTools(this.garminClient);
+    this.performanceTools = new PerformanceTools(this.garminClient);
 
     this.setupToolHandlers();
   }
@@ -316,6 +319,72 @@ class GarminConnectMCPServer {
             },
           },
           {
+            name: "get_vo2max",
+            description: "Get VO2max history with one-decimal precision. Garmin's UI rounds VO2max to a whole number, which can sit unchanged for months while the underlying value moves — use this to see the real trend. Defaults to the last 90 days.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                startDate: {
+                  type: "string",
+                  description: "Start date in YYYY-MM-DD format (defaults to 90 days ago)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+                endDate: {
+                  type: "string",
+                  description: "End date in YYYY-MM-DD format (defaults to today)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+              },
+            },
+          },
+          {
+            name: "get_activity_laps",
+            description: "Get per-lap splits for one activity — the individual interval reps with pace, HR and cadence, rather than the aggregated totals get_activity_details returns. Essential for analysing whether an interval session held pace or faded.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                activityId: {
+                  type: "number",
+                  description: "The activity ID (from get_activities)",
+                },
+              },
+              required: ["activityId"],
+            },
+          },
+          {
+            name: "get_race_predictions",
+            description: "Get Garmin's own predicted race times for 5K, 10K, half marathon and marathon, based on current fitness.",
+            inputSchema: { type: "object", properties: {} },
+          },
+          {
+            name: "get_hrv",
+            description: "Get overnight heart rate variability: last night's average, weekly average, baseline range and status (BALANCED / UNBALANCED / LOW). A recovery and autonomic-load marker.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                date: {
+                  type: "string",
+                  description: "Date in YYYY-MM-DD format (defaults to today)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+              },
+            },
+          },
+          {
+            name: "get_training_status",
+            description: "Get Garmin's aggregated training status for a date, including the most recent VO2max reading and load balance.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                date: {
+                  type: "string",
+                  description: "Date in YYYY-MM-DD format (defaults to today)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+              },
+            },
+          },
+          {
             name: "create_running_workout",
             description: "Create a structured workout in Garmin Connect. Defaults to running; set `sport` to 'cycling', 'swimming' or 'other' for non-running workouts. Build workouts with warmup, intervals, recovery, cooldown, and repeat blocks. Supports time-based, distance-based, and lap-button durations. Supports pace, HR zone, and no-target intensity controls.",
             inputSchema: {
@@ -530,6 +599,22 @@ class GarminConnectMCPServer {
             break;
           case "get_training_stress_balance":
             result = await this.trainingStressTools.getTrainingStressBalance(request.params.arguments || {});
+            break;
+          case "get_vo2max":
+            result = await this.performanceTools.getVo2Max(request.params.arguments || {});
+            break;
+          case "get_activity_laps":
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            result = await this.performanceTools.getActivityLaps(request.params.arguments as any || {});
+            break;
+          case "get_race_predictions":
+            result = await this.performanceTools.getRacePredictions();
+            break;
+          case "get_hrv":
+            result = await this.performanceTools.getHrv(request.params.arguments || {});
+            break;
+          case "get_training_status":
+            result = await this.performanceTools.getTrainingStatus(request.params.arguments || {});
             break;
           case "create_running_workout":
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
