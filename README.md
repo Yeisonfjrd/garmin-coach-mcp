@@ -481,9 +481,12 @@ calculated from.
 
 The basis matters more than the percentages. An identical 60-70% band maps to very
 different bpm under max HR, heart rate reserve and lactate threshold, so a run can
-be reported as too hard purely because the basis is wrong. Field names vary between
-accounts and firmware, so recognised fields are summarised and the untouched
-payload is returned alongside.
+be reported as too hard purely because the basis is wrong.
+
+Garmin returns one entry per sport, each with its own threshold, and includes the
+detected lactate threshold HR even when the zones are not based on it — so this is
+also where to read the threshold itself. The untouched payload is returned
+alongside the summary, since the field set is not contractual.
 
 #### `get_activity_hr_zones`
 Time spent in each heart rate zone during one activity, with each zone's share of
@@ -493,14 +496,6 @@ the session.
 
 Average HR hides distribution: an evenly aerobic run and one that alternated too
 hard and too soft can average the same number.
-
-#### `get_lactate_threshold`
-Threshold heart rate and threshold pace history, as auto-detected by the device.
-
-**Parameters:** `startDate`, `endDate` (both optional, default: last 180 days)
-
-Unlike max HR, threshold moves with fitness, which makes it the better anchor for
-heart rate zones — zones tied to it stay correct without being re-entered.
 
 #### `get_race_predictions`
 Predicted 5K, 10K, half marathon and marathon times, formatted and in seconds.
@@ -752,7 +747,7 @@ waiting on upstream. Work added since the import:
 - Race predictions, overnight HRV, and aggregated training status
 - Configured HR zones and the basis they are derived from, which decides what every
   reported zone actually means
-- Per-activity time in zone, and lactate threshold history
+- Per-activity time in zone
 - Training readiness
 
 See [LICENSE](LICENSE) for the full notice, which retains the original copyright as the MIT

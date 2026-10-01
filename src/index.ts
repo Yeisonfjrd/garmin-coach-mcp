@@ -404,25 +404,6 @@ class GarminConnectMCPServer {
             },
           },
           {
-            name: "get_lactate_threshold",
-            description: "Get lactate threshold history: threshold heart rate and threshold pace as the watch auto-detects them. Unlike max HR this moves with fitness, so it is the better anchor for heart rate zones. Defaults to the last 180 days, since detections are sparse.",
-            inputSchema: {
-              type: "object",
-              properties: {
-                startDate: {
-                  type: "string",
-                  description: "Start date in YYYY-MM-DD format (defaults to 180 days ago)",
-                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
-                },
-                endDate: {
-                  type: "string",
-                  description: "End date in YYYY-MM-DD format (defaults to today)",
-                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
-                },
-              },
-            },
-          },
-          {
             name: "get_training_readiness",
             description: "Get training readiness for a date: the score the device derives from sleep, recovery time, HRV and recent load. A go / hold check before a hard session.",
             inputSchema: {
@@ -674,9 +655,6 @@ class GarminConnectMCPServer {
           case "get_activity_hr_zones":
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             result = await this.performanceTools.getActivityHrZones(request.params.arguments as any || {});
-            break;
-          case "get_lactate_threshold":
-            result = await this.performanceTools.getLactateThreshold(request.params.arguments || {});
             break;
           case "get_training_readiness":
             result = await this.performanceTools.getTrainingReadiness(request.params.arguments || {});

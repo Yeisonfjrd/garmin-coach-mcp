@@ -834,19 +834,6 @@ export class GarminClient {
     return await this.rawGet(`/activity-service/activity/${activityId}/hrTimeInZones`);
   }
 
-  /**
-   * Lactate threshold history as the watch auto-detects it: threshold heart
-   * rate and threshold pace. Unlike max HR, this moves with fitness, so zones
-   * anchored to it stay correct as training progresses.
-   */
-  async getLactateThreshold(startDate: Date, endDate: Date): Promise<unknown> {
-    const s = startDate.toISOString().split('T')[0];
-    const e = endDate.toISOString().split('T')[0];
-    return await this.rawGet(
-      `/biometric-service/stats/lactateThreshold/range/${s}/${e}?aggregation=daily`
-    );
-  }
-
   /** Training readiness: the device's own verdict on whether to train hard today. */
   async getTrainingReadiness(date: Date): Promise<unknown> {
     const d = date.toISOString().split('T')[0];
