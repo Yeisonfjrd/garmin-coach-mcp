@@ -448,6 +448,86 @@ Give me a daily breakdown for the past 2 weeks
 - Breakdown by activity type
 - Daily breakdown (when `includeDailyBreakdown: true`)
 
+### Performance Tools
+
+Endpoints the underlying library does not type, reached through a raw GET helper.
+All are read-only.
+
+#### `get_vo2max`
+VO2max series at one-decimal precision, plus first, last, min, max and the change
+over the range.
+
+**Parameters:** `startDate`, `endDate` (both optional, default: last 90 days)
+
+Garmin's interface rounds VO2max to a whole number, which can sit unchanged for
+months while the underlying value moves. Read `vo2MaxPreciseValue` before
+concluding that fitness has plateaued.
+
+#### `get_activity_laps`
+Per-lap splits for one activity, with pace, HR and cadence per lap.
+
+**Parameters:** `activityId` (required)
+
+`get_activity_details` aggregates by step type, which collapses the individual
+reps of an interval session. This is what makes rep-by-rep analysis possible —
+whether a session held pace or faded. Laps under 300 m report no pace, since over
+that distance the figure is noise.
+
+#### `get_hr_zones`
+The heart rate zones configured on the account, per sport, and the basis they are
+calculated from.
+
+**Parameters:** none
+
+The basis matters more than the percentages. An identical 60-70% band maps to very
+different bpm under max HR, heart rate reserve and lactate threshold, so a run can
+be reported as too hard purely because the basis is wrong. Field names vary between
+accounts and firmware, so recognised fields are summarised and the untouched
+payload is returned alongside.
+
+#### `get_activity_hr_zones`
+Time spent in each heart rate zone during one activity, with each zone's share of
+the session.
+
+**Parameters:** `activityId` (required)
+
+Average HR hides distribution: an evenly aerobic run and one that alternated too
+hard and too soft can average the same number.
+
+#### `get_lactate_threshold`
+Threshold heart rate and threshold pace history, as auto-detected by the device.
+
+**Parameters:** `startDate`, `endDate` (both optional, default: last 180 days)
+
+Unlike max HR, threshold moves with fitness, which makes it the better anchor for
+heart rate zones — zones tied to it stay correct without being re-entered.
+
+#### `get_race_predictions`
+Predicted 5K, 10K, half marathon and marathon times, formatted and in seconds.
+
+**Parameters:** none
+
+Note that this reflects race history as well as current fitness, so it can lag a
+real change in either direction.
+
+#### `get_training_readiness`
+The readiness score for a date, derived from sleep, recovery time, HRV and recent
+load.
+
+**Parameters:** `date` (optional, defaults to today)
+
+#### `get_hrv`
+Overnight heart rate variability: last night's average, weekly average, baseline
+range and status.
+
+**Parameters:** `date` (optional, defaults to today)
+
+#### `get_training_status`
+Aggregated training status for a date, including the most recent VO2max reading
+and acute/chronic load balance.
+
+**Parameters:** `date` (optional, defaults to today)
+
 ## Usage Examples
 
 ### Quick Health Check
@@ -670,6 +750,10 @@ waiting on upstream. Work added since the import:
 - VO2max readings at full precision, rather than the integer the Garmin UI rounds to
 - Per-lap activity splits, so individual intervals can be analysed instead of type totals
 - Race predictions, overnight HRV, and aggregated training status
+- Configured HR zones and the basis they are derived from, which decides what every
+  reported zone actually means
+- Per-activity time in zone, and lactate threshold history
+- Training readiness
 
 See [LICENSE](LICENSE) for the full notice, which retains the original copyright as the MIT
 License requires.
