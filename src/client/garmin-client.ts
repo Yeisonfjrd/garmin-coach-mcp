@@ -759,4 +759,59 @@ export class GarminClient {
       }
     });
   }
+
+  /**
+   * Raw Garmin API GET. The typed library surface covers only a fraction of
+   * Garmin's endpoints, so the performance metrics below go through here.
+   */
+  private async rawGet<T>(path: string): Promise<T> {
+    return await this.retryWithReauth(async () => {
+      const client = await this.initialize();
+      return await (client as unknown as ExtendedGarminClient).client.get(
+        `https://connectapi.garmin.com${path}`
+      ) as T;
+    });
+  }
+
+  /**
+   * VO2max time series. Garmin's UI rounds to a whole number, which hides real
+   * movement — this exposes `vo2MaxPreciseValue` (one decimal) so a trend is
+   * visible between integer steps.
+   */
+  async getVo2Max(startDate: Date, endDate: Date): Promise<unknown> {
+    const s = startDate.toISOString().split('T')[0];
+    const e = endDate.toISOString().split('T')[0];
+    return await this.rawGet(`/metrics-service/metrics/maxmet/daily/${s}/${e}`);
+  }
+
+  /**
+   * Per-lap splits for one activity — the individual interval reps, rather than
+   * the aggregated per-type totals that getActivity returns.
+   */
+  async getActivityLaps(activityId: number): Promise<unknown> {
+    return await this.rawGet(`/activity-service/activity/${activityId}/splits`);
+  }
+
+  /** Garmin's own 5K / 10K / half / marathon time predictions, in seconds. */
+  async getRacePredictions(): Promise<unknown> {
+    const client = await this.initialize();
+    const profile = await client.getUserProfile() as { displayName?: string; userName?: string };
+    const id = profile.displayName ?? profile.userName;
+    if (!id) {
+      throw new Error('Could not resolve Garmin display name for race predictions');
+    }
+    return await this.rawGet(`/metrics-service/metrics/racepredictions/latest/${id}`);
+  }
+
+  /** Overnight HRV summary and readings — recovery / autonomic load marker. */
+  async getHrv(date: Date): Promise<unknown> {
+    const d = date.toISOString().split('T')[0];
+    return await this.rawGet(`/hrv-service/hrv/${d}`);
+  }
+
+  /** Aggregated training status, including the most recent VO2max reading. */
+  async getTrainingStatus(date: Date): Promise<unknown> {
+    const d = date.toISOString().split('T')[0];
+    return await this.rawGet(`/metrics-service/metrics/trainingstatus/aggregated/${d}`);
+  }
 }
