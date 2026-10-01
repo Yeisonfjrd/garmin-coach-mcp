@@ -317,7 +317,7 @@ class GarminConnectMCPServer {
           },
           {
             name: "create_running_workout",
-            description: "Create a structured running workout in Garmin Connect. Build workouts with warmup, intervals, recovery, cooldown, and repeat blocks. Supports time-based, distance-based, and lap-button durations. Supports pace, HR zone, and no-target intensity controls.",
+            description: "Create a structured workout in Garmin Connect. Defaults to running; set `sport` to 'cycling', 'swimming' or 'other' for non-running workouts. Build workouts with warmup, intervals, recovery, cooldown, and repeat blocks. Supports time-based, distance-based, and lap-button durations. Supports pace, HR zone, and no-target intensity controls.",
             inputSchema: {
               type: "object",
               properties: {
@@ -329,6 +329,11 @@ class GarminConnectMCPServer {
                 description: {
                   type: "string",
                   description: "Optional workout description",
+                },
+                sport: {
+                  type: "string",
+                  enum: ["running", "cycling", "swimming", "other"],
+                  description: "Sport type for the workout. Defaults to 'running' when omitted.",
                 },
                 steps: {
                   type: "array",

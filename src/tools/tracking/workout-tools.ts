@@ -21,7 +21,8 @@
 
 import { GarminClient } from '../../client/garmin-client.js';
 import { WorkoutBuilder, EndConditionFactory, TargetFactory } from '../../services/workoutBuilder.js';
-import type { EndConditionData, Target, DistanceUnitName } from '../../types/workout.js';
+import type { EndConditionData, Target, DistanceUnitName, SportTypeName } from '../../types/workout.js';
+import { SPORT_TYPE_MAPPING } from '../../types/workout.js';
 import { ToolResult } from '../../types/garmin-types.js';
 import { logger } from '../../utils/logger.js';
 import {
@@ -62,6 +63,7 @@ interface CreateRunningWorkoutArgs {
   name: string;
   description?: string;
   steps: WorkoutStepInput[];
+  sport: SportTypeName;
 }
 
 interface ScheduleWorkoutArgs {
@@ -90,7 +92,7 @@ export class WorkoutTools {
       const validated = this.validateInput(params);
 
       // Task 4: Build Workout
-      const builder = new WorkoutBuilder(validated.name, 'running');
+      const builder = new WorkoutBuilder(validated.name, validated.sport);
 
       if (validated.description) {
         builder.setDescription(validated.description);
@@ -156,6 +158,17 @@ export class WorkoutTools {
       throw new Error('Description must be a string');
     }
 
+    // Validate sport (optional, defaults to 'running' for backward compatibility)
+    let sport: SportTypeName = 'running';
+    if (args.sport !== undefined) {
+      if (typeof args.sport !== 'string' || !(args.sport in SPORT_TYPE_MAPPING)) {
+        throw new Error(
+          `Invalid sport "${args.sport}". Supported sports: ${Object.keys(SPORT_TYPE_MAPPING).join(', ')}`
+        );
+      }
+      sport = args.sport as SportTypeName;
+    }
+
     // Validate steps array
     if (!Array.isArray(args.steps) || args.steps.length === 0) {
       throw new Error('Steps array is required and must contain at least one step');
@@ -170,6 +183,7 @@ export class WorkoutTools {
     return {
       name: args.name.trim(),
       description: args.description?.trim(),
+      sport,
       steps: args.steps
     };
   }

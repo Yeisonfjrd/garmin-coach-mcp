@@ -18,6 +18,8 @@
  * @module types/tool-params
  */
 
+import type { SportTypeName } from './workout.js';
+
 // ============================================================================
 // Common Parameter Interfaces
 // ============================================================================
@@ -357,6 +359,13 @@ export interface CreateRunningWorkoutParams {
    * @minItems 1
    */
   steps: WorkoutStep[];
+
+  /**
+   * Sport type for the workout. Defaults to 'running' when omitted, so existing
+   * callers keep working unchanged.
+   * @example "cycling"
+   */
+  sport?: SportTypeName;
 }
 
 /**
