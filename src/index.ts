@@ -385,6 +385,58 @@ class GarminConnectMCPServer {
             },
           },
           {
+            name: "get_hr_zones",
+            description: "Get the heart rate zones configured on the account, per sport, and crucially which basis they are calculated from (max HR, heart rate reserve, or lactate threshold). The same percentage band maps to very different bpm depending on the basis, so check this before interpreting any zone the watch reports.",
+            inputSchema: { type: "object", properties: {} },
+          },
+          {
+            name: "get_activity_hr_zones",
+            description: "Get time spent in each heart rate zone during one activity, with each zone's share of the session. Average HR hides distribution — use this to tell an evenly aerobic run from one that swung between too hard and too easy.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                activityId: {
+                  type: "number",
+                  description: "The activity ID (from get_activities)",
+                },
+              },
+              required: ["activityId"],
+            },
+          },
+          {
+            name: "get_lactate_threshold",
+            description: "Get lactate threshold history: threshold heart rate and threshold pace as the watch auto-detects them. Unlike max HR this moves with fitness, so it is the better anchor for heart rate zones. Defaults to the last 180 days, since detections are sparse.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                startDate: {
+                  type: "string",
+                  description: "Start date in YYYY-MM-DD format (defaults to 180 days ago)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+                endDate: {
+                  type: "string",
+                  description: "End date in YYYY-MM-DD format (defaults to today)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+              },
+            },
+          },
+          {
+            name: "get_training_readiness",
+            description: "Get training readiness for a date: the score the device derives from sleep, recovery time, HRV and recent load. A go / hold check before a hard session.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                date: {
+                  type: "string",
+                  description: "Date in YYYY-MM-DD format (defaults to today)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+              },
+            },
+          },
+          {
             name: "create_running_workout",
             description: "Create a structured workout in Garmin Connect. Defaults to running; set `sport` to 'cycling', 'swimming' or 'other' for non-running workouts. Build workouts with warmup, intervals, recovery, cooldown, and repeat blocks. Supports time-based, distance-based, and lap-button durations. Supports pace, HR zone, and no-target intensity controls.",
             inputSchema: {
@@ -615,6 +667,19 @@ class GarminConnectMCPServer {
             break;
           case "get_training_status":
             result = await this.performanceTools.getTrainingStatus(request.params.arguments || {});
+            break;
+          case "get_hr_zones":
+            result = await this.performanceTools.getHrZones();
+            break;
+          case "get_activity_hr_zones":
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            result = await this.performanceTools.getActivityHrZones(request.params.arguments as any || {});
+            break;
+          case "get_lactate_threshold":
+            result = await this.performanceTools.getLactateThreshold(request.params.arguments || {});
+            break;
+          case "get_training_readiness":
+            result = await this.performanceTools.getTrainingReadiness(request.params.arguments || {});
             break;
           case "create_running_workout":
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
