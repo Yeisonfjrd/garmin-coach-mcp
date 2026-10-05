@@ -77,6 +77,16 @@ export const getISOWeekRange = (year: number, week: number): { start: Date; end:
 };
 
 /**
+ * Parse a date string, treating a bare YYYY-MM-DD as a calendar day in local time.
+ * `new Date('2024-01-15')` is UTC midnight, which west of UTC (e.g. Buenos Aires)
+ * is still the 14th locally, so local getters and setHours land on the wrong day.
+ */
+export const parseLocalDate = (value: string): Date => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(value);
+};
+
+/**
  * Get the ISO week number for a given date
  * ISO week 1 is the week that contains the first Thursday of the year
  * (or equivalently, the week that contains January 4th)

@@ -7,6 +7,7 @@ import {
   removeEmptyValues,
   formatActivityType,
   getISOWeek,
+  parseLocalDate,
   getISOWeekRange,
   getMonthRange,
   parseDateRange,
@@ -211,21 +212,21 @@ describe('Data Transforms', () => {
   describe('getISOWeek', () => {
     it('should get correct ISO week for various dates', () => {
       // January 1, 2024 is a Monday and is week 1
-      expect(getISOWeek(new Date('2024-01-01'))).toEqual({ year: 2024, week: 1 });
+      expect(getISOWeek(parseLocalDate('2024-01-01'))).toEqual({ year: 2024, week: 1 });
 
       // January 4, 2024 is a Thursday and should be week 1
-      expect(getISOWeek(new Date('2024-01-04'))).toEqual({ year: 2024, week: 1 });
+      expect(getISOWeek(parseLocalDate('2024-01-04'))).toEqual({ year: 2024, week: 1 });
 
       // December 30, 2023 should be week 52 of 2023
-      expect(getISOWeek(new Date('2023-12-30'))).toEqual({ year: 2023, week: 52 });
+      expect(getISOWeek(parseLocalDate('2023-12-30'))).toEqual({ year: 2023, week: 52 });
     });
 
     it('should handle year boundaries correctly', () => {
       // January 1, 2023 is a Sunday, should be week 52 of 2022
-      expect(getISOWeek(new Date('2023-01-01'))).toEqual({ year: 2022, week: 52 });
+      expect(getISOWeek(parseLocalDate('2023-01-01'))).toEqual({ year: 2022, week: 52 });
 
       // January 2, 2023 is a Monday, should be week 1 of 2023
-      expect(getISOWeek(new Date('2023-01-02'))).toEqual({ year: 2023, week: 1 });
+      expect(getISOWeek(parseLocalDate('2023-01-02'))).toEqual({ year: 2023, week: 1 });
     });
   });
 

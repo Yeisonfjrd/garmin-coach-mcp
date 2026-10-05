@@ -9,7 +9,7 @@
 import type { WeeklyMetrics } from '../types/periodization.js';
 import type { DailyTSS } from '../types/training-stress.js';
 import { TIME_CONSTANTS } from '../types/training-stress.js';
-import { getISOWeek, getISOWeekRange } from '../utils/data-transforms.js';
+import { getISOWeek, getISOWeekRange, parseLocalDate } from '../utils/data-transforms.js';
 
 /**
  * Aggregate daily data into weekly metrics
@@ -40,7 +40,7 @@ export function aggregateWeeklyMetrics(
   const tssWeekMap = new Map<string, DailyTSS[]>();
 
   for (const tss of dailyTSS) {
-    const date = new Date(tss.date);
+    const date = parseLocalDate(tss.date);
     const { year, week } = getISOWeek(date);
     const weekKey = `${year}-W${String(week).padStart(2, '0')}`;
 

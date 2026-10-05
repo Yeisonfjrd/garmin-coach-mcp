@@ -91,8 +91,9 @@ export function validateDate(date?: string): Date {
     );
   }
 
-  // Parse and validate the date is valid
-  const parsed = new Date(date);
+  // Parse as a local calendar day, consistent with validateDate() defaulting to local "now"
+  const [year, month, day] = date.split('-').map(Number);
+  const parsed = new Date(year, month - 1, day);
   if (isNaN(parsed.getTime())) {
     throw new ValidationError(
       'date',
@@ -102,9 +103,8 @@ export function validateDate(date?: string): Date {
     );
   }
 
-  // Verify the parsed date matches the input (catches invalid dates like 2025-02-30)
-  const formatted = parsed.toISOString().split('T')[0];
-  if (formatted !== date) {
+  // Date rolls 2025-02-30 over to March 2nd; reject anything that didn't round-trip
+  if (parsed.getFullYear() !== year || parsed.getMonth() !== month - 1 || parsed.getDate() !== day) {
     throw new ValidationError(
       'date',
       date,

@@ -30,7 +30,7 @@ import {
   calculateTrainingStressBalance,
   fillMissingDates
 } from '../../utils/tss-calculator.js';
-import { removeEmptyValues } from '../../utils/data-transforms.js';
+import { removeEmptyValues, parseLocalDate } from '../../utils/data-transforms.js';
 import { createSummary } from '../../utils/summary-helpers.js';
 import { logger } from '../../utils/logger.js';
 import { GetTrainingStressBalanceParams } from '../../types/tool-params.js';
@@ -60,7 +60,7 @@ export class TrainingStressTools extends BaseAdvancedTool {
 
     try {
       // Parse target date
-      const targetDate = dateStr ? new Date(dateStr) : new Date();
+      const targetDate = dateStr ? parseLocalDate(dateStr) : new Date();
       if (isNaN(targetDate.getTime())) {
         throw new Error('Invalid date format. Expected: YYYY-MM-DD');
       }
