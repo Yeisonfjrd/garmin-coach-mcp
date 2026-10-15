@@ -35,7 +35,7 @@ class GarminConnectMCPServer {
 
     this.server = new Server(
       {
-        name: "garmin-connect-mcp",
+        name: "garmin-coach-mcp",
         version: version,
       },
       {

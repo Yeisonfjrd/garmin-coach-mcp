@@ -80,7 +80,7 @@ No installation required! Configure directly in your MCP client:
   "mcpServers": {
     "garmin-connect": {
       "command": "npx",
-      "args": ["-y", "garmin-connect-mcp@latest"],
+      "args": ["-y", "garmin-coach-mcp@latest"],
       "env": {
         "GARMIN_USERNAME": "your_username",
         "GARMIN_PASSWORD": "your_password"
@@ -94,7 +94,7 @@ No installation required! Configure directly in your MCP client:
 
 Using the Claude Code CLI (recommended):
 ```bash
-claude mcp add garmin-connect npx garmin-connect-mcp@latest \
+claude mcp add garmin-coach npx garmin-coach-mcp@latest \
   --env GARMIN_USERNAME=your_username \
   --env GARMIN_PASSWORD=your_password
 ```
@@ -105,7 +105,7 @@ Or manually configure (`.claude/mcp.json` in your project):
   "mcpServers": {
     "garmin-connect": {
       "command": "npx",
-      "args": ["-y", "garmin-connect-mcp@latest"],
+      "args": ["-y", "garmin-coach-mcp@latest"],
       "env": {
         "GARMIN_USERNAME": "your_username",
         "GARMIN_PASSWORD": "your_password"
@@ -122,7 +122,7 @@ The `-y` flag automatically accepts the npx prompt, ensuring smooth startup.
 Install globally via npm:
 
 ```bash
-npm install -g garmin-connect-mcp@latest
+npm install -g garmin-coach-mcp@latest
 ```
 
 Then configure without npx:
@@ -131,7 +131,7 @@ Then configure without npx:
 {
   "mcpServers": {
     "garmin-connect": {
-      "command": "garmin-connect-mcp",
+      "command": "garmin-coach-mcp",
       "env": {
         "GARMIN_USERNAME": "your_username",
         "GARMIN_PASSWORD": "your_password"
@@ -146,8 +146,8 @@ Then configure without npx:
 For development or testing local changes:
 
 ```bash
-git clone <repository-url>
-cd garmin-connect-mcp
+git clone https://github.com/Yeisonfjrd/garmin-coach-mcp.git
+cd garmin-coach-mcp
 pnpm install
 pnpm build
 ```
@@ -159,7 +159,7 @@ Configure with absolute path:
   "mcpServers": {
     "garmin-connect": {
       "command": "node",
-      "args": ["/absolute/path/to/garmin-connect-mcp/dist/index.js"],
+      "args": ["/absolute/path/to/garmin-coach-mcp/dist/index.js"],
       "env": {
         "GARMIN_USERNAME": "your_username",
         "GARMIN_PASSWORD": "your_password"
@@ -176,8 +176,8 @@ Or use a `.env` file:
   "mcpServers": {
     "garmin-connect": {
       "command": "node",
-      "args": ["/absolute/path/to/garmin-connect-mcp/dist/index.js"],
-      "envFile": "/absolute/path/to/garmin-connect-mcp/.env"
+      "args": ["/absolute/path/to/garmin-coach-mcp/dist/index.js"],
+      "envFile": "/absolute/path/to/garmin-coach-mcp/.env"
     }
   }
 }
@@ -629,7 +629,7 @@ pnpm test:coverage    # Generate coverage report
 ### Project Structure
 
 ```
-garmin-connect-mcp/
+garmin-coach-mcp/
 ├── src/
 │   ├── client/           # Garmin Connect API client
 │   ├── tools/            # MCP tool implementations
