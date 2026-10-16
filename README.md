@@ -10,10 +10,9 @@ block and puts it on the watch.
 
 ![A 6 x 400 m workout created and scheduled for Wednesday through garmin-coach-mcp](docs/demo.gif)
 
-A real run against a Garmin account: `create_running_workout` builds the session (warmup,
-6 × 400 m at 4:00–4:15/km with 1:30 jog, cooldown), `schedule_workout` puts it on the 21st, and
-`get_scheduled_workouts` confirms it's on the calendar, which is what syncs to the watch. The
-workout was deleted afterwards.
+This is a real run on my Garmin account. It creates a 6 x 400 m workout, puts it on Wednesday
+and checks that it is in the calendar. The calendar is what syncs to the watch. I deleted the
+workout after the recording.
 
 ## Table of Contents
 
