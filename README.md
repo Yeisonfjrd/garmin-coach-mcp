@@ -8,6 +8,12 @@ and performance metrics on the write side.
 Built to close a specific gap: most Garmin integrations only read. This one plans a training
 block and puts it on the watch.
 
+![A 6 x 400 m workout created and scheduled for Wednesday through garmin-coach-mcp](docs/demo.gif)
+
+This is a real run on my Garmin account. It creates a 6 x 400 m workout, puts it on Wednesday
+and checks that it is in the calendar. The calendar is what syncs to the watch. I deleted the
+workout after the recording.
+
 ## Table of Contents
 
 - [Overview](#overview)
