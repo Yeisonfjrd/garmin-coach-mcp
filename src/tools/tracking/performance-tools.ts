@@ -14,6 +14,7 @@
  * - getHrZones: the heart rate zones configured on the account, and their basis
  * - getActivityHrZones: time spent in each zone during one activity
  * - getTrainingReadiness: the device verdict on training hard today
+ * - getNutrition: calories taken in and burned, for days a nutrition app synced
  *
  * @category Tracking
  */
@@ -306,6 +307,44 @@ export class PerformanceTools {
       });
     } catch (error) {
       return fail('get activity heart rate zones', error);
+    }
+  }
+
+  /**
+   * Calories in and out for a date. Intake only exists for days a nutrition
+   * app wrote to Garmin Connect, so a null reading means no food was logged
+   * or nothing is synced — not that the person ate nothing.
+   *
+   * Garmin spells these fields inconsistently across accounts, so every
+   * calorie-named field in the response is passed through beside the summary
+   * rather than dropped.
+   */
+  async getNutrition(params: { date?: string }): Promise<ToolResult> {
+    try {
+      const date = params.date ? new Date(params.date) : new Date();
+      const raw = (await this.garminClient.getNutrition(date)) as Record<string, unknown>;
+      const r = raw ?? {};
+
+      const consumed = numOrNull(r.consumedKilocalories ?? r.consumedCalories);
+      const burned = numOrNull(r.totalKilocalories);
+      const calorieFields = Object.fromEntries(
+        Object.entries(r).filter(([k]) => /calor/i.test(k))
+      );
+
+      return ok({
+        success: true,
+        date: strOrNull(r.calendarDate),
+        consumed,
+        burnedTotal: burned,
+        burnedActive: numOrNull(r.activeKilocalories),
+        bmr: numOrNull(r.bmrKilocalories),
+        balance: consumed !== null && burned !== null ? consumed - burned : null,
+        remainingToGoal: numOrNull(r.remainingKilocalories),
+        loggedFood: consumed !== null,
+        calorieFields,
+      });
+    } catch (error) {
+      return fail('get nutrition', error);
     }
   }
 
