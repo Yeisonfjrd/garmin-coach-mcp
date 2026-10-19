@@ -406,6 +406,20 @@ class GarminConnectMCPServer {
             },
           },
           {
+            name: "get_nutrition",
+            description: "Get calories taken in and burned for a date, from Garmin's daily summary. Intake is present only for days a synced nutrition app (such as MyFitnessPal) wrote to Garmin Connect — a null intake means no food was logged or nothing is synced, not that nothing was eaten. The step and health tools cannot see intake at all.",
+            inputSchema: {
+              type: "object",
+              properties: {
+                date: {
+                  type: "string",
+                  description: "Date in YYYY-MM-DD format (defaults to today)",
+                  pattern: "^\\d{4}-\\d{2}-\\d{2}$",
+                },
+              },
+            },
+          },
+          {
             name: "get_training_readiness",
             description: "Get training readiness for a date: the score the device derives from sleep, recovery time, HRV and recent load. A go / hold check before a hard session.",
             inputSchema: {
@@ -664,6 +678,9 @@ class GarminConnectMCPServer {
           case "get_activity_hr_zones":
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             result = await this.performanceTools.getActivityHrZones(request.params.arguments as any || {});
+            break;
+          case "get_nutrition":
+            result = await this.performanceTools.getNutrition(request.params.arguments || {});
             break;
           case "get_training_readiness":
             result = await this.performanceTools.getTrainingReadiness(request.params.arguments || {});

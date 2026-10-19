@@ -527,6 +527,16 @@ Predicted 5K, 10K, half marathon and marathon times, formatted and in seconds.
 Note that this reflects race history as well as current fitness, so it can lag a
 real change in either direction.
 
+#### `get_nutrition`
+Calories taken in and burned for a date, from Garmin's daily summary.
+
+**Parameters:** `date` (optional, defaults to today)
+
+Intake reaches Garmin only from a synced nutrition app, so a null intake means
+no food was logged or nothing is synced - not that nothing was eaten. The step
+and health tools cannot see intake at all, which is why this reads the daily
+summary instead.
+
 #### `get_training_readiness`
 The readiness score for a date, derived from sleep, recovery time, HRV and recent
 load.

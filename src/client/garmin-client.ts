@@ -834,6 +834,23 @@ export class GarminClient {
     return await this.rawGet(`/activity-service/activity/${activityId}/hrTimeInZones`);
   }
 
+  /**
+   * The daily user summary. Besides what the account burns, this carries the
+   * calories a synced nutrition app (MyFitnessPal and the like) has written
+   * back to Garmin Connect — the one place intake is readable, since the
+   * stats endpoints behind the step and health tools do not include it.
+   */
+  async getNutrition(date: Date): Promise<unknown> {
+    const d = date.toISOString().split('T')[0];
+    const client = await this.initialize();
+    const profile = await client.getUserProfile() as { displayName?: string; userName?: string };
+    const id = profile.displayName ?? profile.userName;
+    if (!id) {
+      throw new Error('Could not resolve Garmin display name for the daily summary');
+    }
+    return await this.rawGet(`/usersummary-service/usersummary/daily/${id}?calendarDate=${d}`);
+  }
+
   /** Training readiness: the device's own verdict on whether to train hard today. */
   async getTrainingReadiness(date: Date): Promise<unknown> {
     const d = date.toISOString().split('T')[0];
