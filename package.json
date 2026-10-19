@@ -1,6 +1,6 @@
 {
   "name": "garmin-coach-mcp",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MCP server for planning and writing structured training into Garmin Connect — multi-sport workouts, scheduling, and performance metrics",
   "main": "dist/index.js",
   "type": "module",
