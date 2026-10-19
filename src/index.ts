@@ -9,6 +9,7 @@ import {
 
 import { GarminClient } from './client/garmin-client.js';
 import { getPackageVersion } from './utils/version.js';
+import { applyToolAccess, isReadOnlyMode, WRITE_TOOLS } from './utils/tool-access.js';
 import { SleepTools } from './tools/basic/sleep-tools.js';
 import { OverviewTools } from './tools/basic/overview-tools.js';
 import { HealthTools } from './tools/basic/health-tools.js';
@@ -72,7 +73,8 @@ class GarminConnectMCPServer {
   private setupToolHandlers() {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: [
+        // annotations tell clients which calls change the account; GARMIN_READ_ONLY hides those
+        tools: applyToolAccess([
           {
             name: "get_daily_overview",
             description: "Get a comprehensive daily overview including sleep, activities, and health metrics",
@@ -594,11 +596,18 @@ class GarminConnectMCPServer {
               required: ["workoutId"],
             },
           },
-        ],
+        ], process.env),
       };
     });
 
     this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+      // hidden from the list is not enough: a client can still call a tool by name
+      if (isReadOnlyMode(process.env) && WRITE_TOOLS.has(request.params.name)) {
+        return {
+          content: [{ type: "text", text: `${request.params.name} is disabled: GARMIN_READ_ONLY is set, so this server does not change the Garmin account.` }],
+          isError: true,
+        };
+      }
       try {
         let result;
         switch (request.params.name) {

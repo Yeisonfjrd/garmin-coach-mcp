@@ -189,6 +189,22 @@ Or use a `.env` file:
 }
 ```
 
+### Read-only mode
+
+Four tools change your Garmin account: `create_running_workout`, `schedule_workout`,
+`unschedule_workout` and `delete_workout`. If you only want to read your data, add this to the
+`env` of your config:
+
+```json
+"GARMIN_READ_ONLY": "true"
+```
+
+Then those four tools are not listed, and if a client calls one anyway, the server says no.
+
+Every tool also has MCP annotations. Read tools have `readOnlyHint: true`, and `delete_workout`
+and `unschedule_workout` have `destructiveHint: true`, so clients like Claude can ask you before
+they change something.
+
 ## Available Tools
 
 ### Overview Tools
