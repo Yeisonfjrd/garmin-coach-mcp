@@ -205,6 +205,13 @@ Every tool also has MCP annotations. Read tools have `readOnlyHint: true`, and `
 and `unschedule_workout` have `destructiveHint: true`, so clients like Claude can ask you before
 they change something.
 
+### HOL Guard
+
+This server is listed in [HOL Guard](https://github.com/hashgraph-online/hol-guard), a tool that
+checks what AI agents run on your machine ([my contribution](https://github.com/hashgraph-online/hol-guard/pull/5267)).
+It is off until you turn it on. The read tools work as usual, and the four tools that change
+your account always ask you first.
+
 ## Available Tools
 
 ### Overview Tools
